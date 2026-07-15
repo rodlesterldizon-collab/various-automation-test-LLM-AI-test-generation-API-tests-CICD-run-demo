@@ -8,7 +8,7 @@
  *    - All inventory items display the same image (dog backpack)
  *    - Some add/remove buttons may not work
  *    - Tests UI discrepancies detection
- * 
+ *  
  * 3. performance_glitch_user - Logs in but with 5-second artificial delay on page load
  *    - Tests explicit/implicit waits and timeout handling
  * 
@@ -63,7 +63,7 @@ test.describe('Authentication State & Visual Regression Matrix', () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     const inventoryPage = await loginPage.login(TEST_USERS.performanceGlitch, VALID_PASSWORD);
-    await inventoryPage.expectInventoryPage(); 
+    await inventoryPage.expectInventoryPage();
   });
 
   test('Error user should be able to log in successfully', async ({ page }) => {
@@ -123,9 +123,9 @@ test.describe('Sauce Demo User Behavior Tests', () => {
     await inventoryPage.expectInventoryPage();
 
     const productImages = page.locator('.inventory_item_img img');
-    
+
     const comparison = await compareVisuals(productImages.nth(0), productImages.nth(1));
-    
+
     // Use isSrcMatch as the primary indicator for the problem_user bug
     expect(comparison.isSrcMatch).toBe(true);
   });

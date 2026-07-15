@@ -16,6 +16,7 @@
 
 ## 📑 Table of Contents
 
+- [🗂️ Test Map](#️-test-map)
 - [💼 Engineering Value & ROI](#-engineering-value--roi)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🏗️ Architecture & Design Patterns](#️-architecture--design-patterns)
@@ -28,6 +29,44 @@
 - [🚀 CI/CD Pipeline](#-cicd-pipeline)
 - [🤖 AI-Augmented Engineering Workflow](#-ai-augmented-engineering-workflow)
 - [⚡ Quick Start](#-quick-start)
+
+
+---
+
+## 🗂️ Test Map
+
+A quick orientation of the `tests/` directory and what lives where:
+
+```
+tests/
+├── accessibility/          # Accessibility audits — Axe-core WCAG scans and Lighthouse
+│                           #   lab audits across mobile & desktop viewports
+│
+├── all-perf/               # Performance & load testing — Apache JMeter test plans
+│                           #   and Taurus (bzt) YAML configs executed here
+│
+├── api-llm/                # LLM evaluation suite — runs a curated golden dataset
+│                           #   against an LLM to verify response accuracy and
+│                           #   groundedness (i.e., the model's answers stay
+│                           #   factually anchored to expected ground-truth data).
+│                           #   Originally built for Google Gemini; switched to
+│                           #   Groq (llama-3.1-8b-instant) to avoid free-tier
+│                           #   rate-limit constraints
+│
+├── api/                    # API tests — REST endpoint validation against the
+│                           #   ReqRes mock API (GET, POST, PUT, PATCH, DELETE)
+│
+├── pages/                  # Page Object Model (POM) — page classes generated
+│                           #   via the Playwright AI Planner, Generator, and
+│                           #   Healer agents for the SauceDemo login & checkout
+│                           #   demo flows
+│
+├── login.spec.ts           # Login spec — authentication tests tied to the POM
+│                           #   page objects (multi-persona login matrix)
+├── checkout-flow.spec.ts   # Checkout spec — end-to-end checkout flow for the
+│                           #   SauceDemo ecommerce demo (cart, shipping, totals)
+└── seed.spec.ts            # Seed spec — lightweight smoke / sanity check
+```
 
 ---
 
