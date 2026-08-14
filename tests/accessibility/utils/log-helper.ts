@@ -12,6 +12,10 @@ export function logViolationsAsWarning(url: string, violations: Result[]) {
     console.warn(chalk.white(`Description: ${violation.help}`));
     console.warn(chalk.cyan(`Help: ${violation.helpUrl}`));
     
+    if (process.env.CI) {
+      console.log(`::warning title=Accessibility Violation [${impact}]::${violation.id} on ${url}: ${violation.help}`);
+    }
+
     if (violation.nodes && violation.nodes.length > 0) {
       console.warn(chalk.gray(`Affected Nodes:`));
       for (const node of violation.nodes) {

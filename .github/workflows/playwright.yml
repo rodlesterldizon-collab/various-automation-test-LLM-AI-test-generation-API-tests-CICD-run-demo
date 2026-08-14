@@ -145,7 +145,12 @@ jobs:
     - name: Summarize Accessibility Results
       if: always()
       run: |
-        if [ "${{ steps.a11y_scan.outcome }}" = "failure" ]; then
+        HAS_VIOLATIONS=false
+        if grep -q '"violations": *\[[^{]]*{' tests/accessibility/reports/*.json 2>/dev/null; then
+          HAS_VIOLATIONS=true
+        fi
+
+        if [ "$HAS_VIOLATIONS" = "true" ] || [ "${{ steps.a11y_scan.outcome }}" = "failure" ]; then
           echo "::warning::Accessibility violations were detected during the scan. The job completed with warnings — review the uploaded accessibility-reports artifact for full details."
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ⚠️ Accessibility Scan — Completed with Warnings" >> $GITHUB_STEP_SUMMARY
