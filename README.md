@@ -280,6 +280,13 @@ Located in `tests/accessibility/` — a dynamic, multi-engine accessibility scan
 - **Non-Blocking Telemetry:** Violations surface as reports rather than blocking public CI jobs (`continue-on-error: true`), maintaining visibility into accessibility debt without failing public demo runs
 - **Dual-Engine Coverage:** Axe-core catches strict WCAG violations; Lighthouse provides complete lab audits across Mobile and Desktop viewports
 
+**Target URLs Tested in CI/CD:**
+- [`https://broken-workshop.dequelabs.com/`](https://broken-workshop.dequelabs.com/) — Deque Systems' intentionally broken workshop site built specifically to demonstrate automated WCAG violation detection (`image-alt`, `color-contrast`).
+- [`https://atlas.gc.ca/toporama/en/index.html`](https://atlas.gc.ca/toporama/en/index.html) — Public Government of Canada Toporama GIS mapping application (contains real-world ARIA and contrast issues).
+
+> [!NOTE]
+> **Why Telemetry Warnings Occur:** These specific web targets were selected intentionally because they contain known, pre-existing accessibility defects. Running Axe-core and Lighthouse against these endpoints demonstrates that the scanner successfully identifies real-world WCAG violations (`CRITICAL` and `SERIOUS` impact items) and surfaces them as non-blocking telemetry warnings in the pipeline summary.
+
 > [!NOTE]
 > **Reporting vs. Release Gates:** In a production deployment pipeline, release policy separates reporting from blocking gates. The severity classification used in this portfolio's documented upgrade path:
 >
