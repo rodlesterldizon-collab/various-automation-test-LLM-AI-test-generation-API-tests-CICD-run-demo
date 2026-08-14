@@ -1,7 +1,7 @@
 # AI-Augmented Playwright Automation Portfolio Showcase
 
-[![CI Status](https://img.shields.io/github/actions/workflow/status/rodlesterldizon-collab/automation-test/playwright.yml?style=for-the-badge&logo=github-actions&label=CI%20Status)](https://github.com/rodlesterldizon-collab/automation-test/actions/workflows/playwright.yml)
-[![Accessibility Audits](https://img.shields.io/badge/Accessibility-WCAG%20Telemetry-yellow?style=for-the-badge&logo=accessibility)](https://github.com/rodlesterldizon-collab/automation-test/actions/workflows/playwright.yml)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/rodlesterldizon-collab/various-automation-test-LLM-AI-test-generation-API-tests-CICD-run-demo/playwright.yml?style=for-the-badge&logo=github-actions&label=CI%20Status)](https://github.com/rodlesterldizon-collab/various-automation-test-LLM-AI-test-generation-API-tests-CICD-run-demo/actions/workflows/playwright.yml)
+[![Accessibility Audits](https://img.shields.io/badge/Accessibility-Telemetry%20%28Warnings%29-yellow?style=for-the-badge&logo=lighthouse)](https://github.com/rodlesterldizon-collab/various-automation-test-LLM-AI-test-generation-API-tests-CICD-run-demo/actions/workflows/playwright.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-45BA4B?style=for-the-badge&logo=playwright&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
