@@ -18,8 +18,7 @@ on:
           - llm
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   api-tests:
@@ -137,10 +136,35 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Accessibility Scans
+      id: a11y_scan
       continue-on-error: true
       run: npx playwright test --project=accessibility
       env:
         URL_LIST: "https://atlas.gc.ca/toporama/en/index.html,https://broken-workshop.dequelabs.com/"
+
+    - name: Summarize Accessibility Results
+      if: always()
+      run: |
+        if [ "${{ steps.a11y_scan.outcome }}" = "failure" ]; then
+          echo "::warning::Accessibility violations were detected during the scan. The job completed with warnings — review the uploaded accessibility-reports artifact for full details."
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ⚠️ Accessibility Scan — Completed with Warnings" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Violations were detected on one or more scanned URLs. This job is configured as **non-blocking telemetry** — the workflow continues, but findings require review." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Gate Behavior |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical / Serious | Would block PR in production pipeline |" >> $GITHUB_STEP_SUMMARY
+          echo "| Moderate | Non-blocking — logged to issue tracker |" >> $GITHUB_STEP_SUMMARY
+          echo "| Minor | Non-blocking — reported only |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📎 Download the **accessibility-reports** artifact below for full Axe-core and Lighthouse details." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "## ✅ Accessibility Scan — No Violations Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All scanned URLs passed the accessibility audit." >> $GITHUB_STEP_SUMMARY
+        fi
+
     - name: Upload Accessibility Reports
       if: always()
       uses: actions/upload-artifact@v4

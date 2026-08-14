@@ -16,6 +16,7 @@
 
 ## 📑 Table of Contents
 
+- [📐 Portfolio Scope & Known Trade-offs](#-portfolio-scope--known-trade-offs)
 - [🗂️ Test Map](#️-test-map)
 - [💼 Engineering Value & ROI](#-engineering-value--roi)
 - [🛠️ Tech Stack](#️-tech-stack)
@@ -30,6 +31,25 @@
 - [🤖 AI-Augmented Engineering Workflow](#-ai-augmented-engineering-workflow)
 - [⚡ Quick Start](#-quick-start)
 
+
+---
+
+## 📐 Portfolio Scope & Known Trade-offs
+
+This section documents the deliberate engineering trade-offs made within the constraints of a zero-budget, personal free-tier environment. A senior engineer is accountable for the decisions they make — including knowing what they would do differently with proper infrastructure.
+
+| Area | Decision Made in This Portfolio | What a Production Implementation Would Change |
+| :--- | :--- | :--- |
+| **API test depth** | Broad scenario coverage (50 tests); assertion depth limited to avoid triggering shared ReqRes rate limits | Deep schema/contract validation (OpenAPI/Pact), idempotency probes, auth-boundary checks — requires a private staging API with dedicated throughput |
+| **Rate-limit handling** | `HTTP 429` responses handled gracefully to prevent public CI pipeline breakage | 429s classified as infrastructure SLA failures; separate pipeline telemetry tracks throttle events distinct from product failures |
+| **Quality gates** | Accessibility and performance jobs run as non-blocking telemetry (`continue-on-error: true`) | Blocking severity policy for `Critical`/`Serious` WCAG violations; lightweight performance smoke gate with explicit SLA threshold enforcement |
+| **LLM evaluation breadth** | 3-prompt golden dataset; constrained by free-tier token limits per CI run | Domain-specific dataset with paraphrase/adversarial variation, deterministic checks, evaluator agreement metrics, dedicated API quota |
+| **Workflow permissions** | Reduced to `contents: read` (least-privilege) after initial review | Job-level permission scoping per step, OIDC token federation for artifact publishing instead of PAT |
+| **Secret handling** | Hardcoded fallback key removed; secrets injected via GitHub Actions only; `.env.example` documents all required keys | Vault-backed secret rotation, secret scanning pre-commit hooks (e.g., `detect-secrets`), environment-scoped secret access |
+| **CI pipeline scope** | Single workflow file covers all jobs; `workflow_dispatch` toggles allow selective suite execution | Matrix-based environment promotion: dev → staging → production gates with separate approval workflows |
+
+> [!IMPORTANT]
+> These are not gaps from lack of knowledge — they are deliberate scope decisions driven by infrastructure budget. The architecture patterns, vocabulary, and upgrade paths documented above reflect how each area would be implemented in a funded enterprise environment.
 
 ---
 
@@ -144,6 +164,17 @@ The framework enforces a resilient locator hierarchy to survive UI changes witho
 
 A custom `compareVisuals` utility programmatically detects UI discrepancies — such as all product images rendering as the same source — by comparing image buffers and DOM `src` attributes. This catches visual bugs that assertion-only tests miss entirely.
 
+### Architectural Decision Records (ADRs)
+
+The following decisions were made deliberately rather than by default:
+
+| Decision | Rationale | Acknowledged Trade-off |
+| :--- | :--- | :--- |
+| **Spec-first workflow** (Markdown specs before code) | Forces explicit coverage intent; specs are reviewable artifacts independent of implementation | Adds an authoring step; only valuable if specs are maintained alongside code |
+| **POM with strict file-location enforcement** | Prevents test logic from leaking into page objects over time; enables AI agent auditing | More boilerplate per new page; requires contributor discipline |
+| **Semantic locators as first-tier** | Aligns selectors with WCAG accessibility tree — locators that break on semantic changes signal real accessibility regressions | Requires the application under test to have meaningful ARIA roles; less applicable to legacy DOM-heavy apps |
+| **Playwright for API testing** (not a dedicated API framework) | Single toolchain; typed TypeScript interfaces reused across UI and API layers; unified reporting | Less ergonomic than Supertest or RestAssured for contract-level validation; justified here by team toolchain consolidation |
+
 ---
 
 ## 🧪 Test Coverage
@@ -174,14 +205,31 @@ Located in `tests/api/` — 50 API tests demonstrating robust backend validation
 - **Edge-Case Coverage:** Malformed payloads, non-existent resources, negative pagination values, extreme string lengths, unauthenticated endpoints
 
 > [!NOTE]
-> **Free-Tier Sandbox Constraints vs. Enterprise Pipelines:**
-> This portfolio relies on shared public sandbox endpoints (ReqRes) and personal free-tier API quotas. In this public demo setting, `HTTP 429` responses are handled gracefully to prevent third-party sandbox rate limits from repeatedly failing public CI runs. In a production enterprise environment with dedicated staging servers, private keys, and SLA contracts, rate limits and skips are classified as infrastructure failures or telemetry exclusions rather than green test states.
+> **Free-Tier Sandbox Constraints — Breadth vs. Depth Trade-off**
+>
+> The API suite intentionally favors **breadth of scenario coverage over deep assertion chains per test**. ReqRes is a shared, rate-limited public mock service running on a free tier — not a dedicated staging environment. Chaining multiple heavy assertions per request (schema validation, multi-step contract checks, idempotency probes, sequential consistency reads) multiplies the request count per CI run significantly, which reliably triggers `HTTP 429` rate limits on shared public endpoints, breaking the public pipeline for anyone reviewing this repository.
+>
+> Some tests are also explicitly scoped or skipped where the ReqRes mock returns behavior that is tightly coupled to the demo service's own implementation (e.g., exact empty JSON bodies, fixed field sets) — which would generate false failures on any real service. These are annotated in the test source.
+>
+> **What the suite demonstrates mechanically:**
+> - REST verb coverage (GET, POST, PUT, PATCH, DELETE) with TypeScript-typed request/response interfaces
+> - Secret injection via GitHub Actions and Playwright config — no credentials in source
+> - Edge-case inputs: malformed payloads, non-existent resources, negative pagination, unauthenticated access
+>
+> **What enterprise API validation would additionally require with a dedicated environment:**
+> - Full JSON schema validation against a versioned contract (e.g., OpenAPI / Pact consumer-driven contracts)
+> - Authorization boundary testing: role-based access, token expiry, scope enforcement
+> - Idempotency verification for POST/PUT/PATCH operations
+> - Data-integrity and consistency checks across sequential reads after write
+> - Response time SLA assertions under defined load conditions
+> - A private staging environment with sufficient throughput headroom to run the full battery without rate-limit interference
+
 
 ### LLM Evaluation — Promptfoo + Groq
 
 Located in `tests/api-llm/` — programmatic evaluation of Large Language Models using Promptfoo.
 
-**Why this matters:** AI features fail silently. Accuracy regressions don't throw exceptions — they return plausible-sounding wrong answers. This suite catches that before production.
+**Why this matters:** AI features fail silently. Accuracy regressions don't throw exceptions — they return plausible-sounding wrong answers. This suite demonstrates the mechanics of automated LLM evaluation using a structured, reproducible pipeline.
 
 **How it works:**
 - **Golden Dataset** (`tests/api-llm/golden-dataset.csv`): A curated set of prompts with expected answers used as the ground-truth rubric
@@ -194,13 +242,33 @@ Located in `tests/api-llm/` — programmatic evaluation of Large Language Models
 # Run LLM evaluation
 npm run test:llm:groq
 
-# Setup: add your key to .env
-GROQ_API_KEY=gsk_your_key_here
+# Setup: copy .env.example to .env and fill in your GROQ_API_KEY
+cp .env.example .env
 ```
 
 **Evaluation Output:**
 
 ![Promptfoo Golden Dataset Evaluation](screenshots/goldendataset-promptfoo.png)
+
+> [!NOTE]
+> **Scope of This Showcase: Mechanics vs. Production-Scale Coverage**
+>
+> The golden dataset intentionally contains a small number of prompts (arithmetic, translation, and security-sensitive refusal behavior). **This is a deliberate constraint of the free-tier API environment**, not a design limitation of the framework itself.
+>
+> Each Promptfoo evaluation run makes multiple LLM API calls — one for each prompt, plus one for the LLM-as-judge grader. At free-tier token-per-minute and request-per-day limits (Groq, Gemini), expanding the dataset to include paraphrase variation, adversarial inputs, hallucination cases, domain-specific facts, or multi-turn scenarios would reliably hit rate limits during every CI/CD run and break the public pipeline.
+>
+> **What this suite proves mechanically:**
+> - Custom provider adapters bridge unsupported third-party LLM SDKs into Promptfoo's evaluation loop
+> - LLM-as-judge grading operates programmatically against expected ground-truth outputs
+> - The evaluation pipeline integrates cleanly into GitHub Actions CI/CD with secret injection
+>
+> **What production-scale LLM evaluation would additionally require:**
+> - A significantly larger, domain-specific golden dataset with paraphrase and adversarial variation
+> - Deterministic expected-output checks for factual/structural prompts (not solely LLM-judged)
+> - Evaluator agreement analysis to measure consistency across judge runs and reduce correlated errors from LLM-as-judge drift
+> - Hallucination detection cases and temperature sensitivity analysis
+> - Historical defect-based pass/fail thresholds rather than a fixed 80% accuracy target
+> - Dedicated API quota (paid tier or internally hosted model) to run the full evaluation battery reliably in CI
 
 ### Accessibility Audits — Axe-core + Lighthouse
 
@@ -212,7 +280,28 @@ Located in `tests/accessibility/` — a dynamic, multi-engine accessibility scan
 - **Dual-Engine Coverage:** Axe-core catches strict WCAG violations; Lighthouse provides complete lab audits across Mobile and Desktop viewports
 
 > [!NOTE]
-> **Reporting vs. Release Gates:** In a production deployment pipeline, release policy separates reporting from blocking gates: `Critical` and `Serious` WCAG violations act as blocking PR quality gates, while `Minor` findings report to backlog tracking.
+> **Reporting vs. Release Gates:** In a production deployment pipeline, release policy separates reporting from blocking gates. The severity classification used in this portfolio's documented upgrade path:
+>
+> | Severity | Axe-core Impact Level | Gate Behavior |
+> | :--- | :--- | :--- |
+> | Critical | `critical` | Blocking — fails PR immediately |
+> | Serious | `serious` | Blocking — fails PR immediately |
+> | Moderate | `moderate` | Non-blocking — logged to issue tracker |
+> | Minor | `minor` | Non-blocking — reported only |
+>
+> This portfolio currently runs all findings as non-blocking reports due to public sandbox constraints.
+
+**CI Signal Design — Warning Annotations**
+
+GitHub Actions has three final job states: **Success** (green), **Failure** (red), and **Cancelled** (grey). There is no native "warning" final state.
+
+The accessibility job uses the best available pattern to communicate findings without false-failing the pipeline:
+
+- The scan step runs with `continue-on-error: true` — the job **stays green** even when violations are detected
+- A post-scan step checks the outcome and, if violations were found, emits a `::warning::` annotation — visible as a **yellow triangle** in the GitHub Actions run annotations panel
+- The GitHub Actions **Job Summary** renders a `⚠️ Accessibility Scan — Completed with Warnings` table with the severity policy and a link to download the full Axe-core and Lighthouse artifact
+
+This design is deliberate: blocking the entire pipeline on WCAG violations from a **third-party public demo URL** (`dequelabs.com`) would create noise, not signal. In a production pipeline, a separate **blocking PR job** would run against the application under test and fail only on new `Critical` or `Serious` violations introduced by the changeset — not pre-existing violations on external demo sites.
 
 | **Axe-Core Custom Dashboard** | **Lighthouse Mobile/Desktop Audit** |
 | :---: | :---: |
@@ -268,6 +357,27 @@ The pipeline achieves **~1-minute end-to-end execution** with multi-job orchestr
 ![CI/CD Pipeline](screenshots/cicd.png)
 
 > The CI badge at the top of this README is live — click it to see the latest pipeline run.
+
+### 🔒 Security Practices
+
+Security hygiene applied in this pipeline:
+
+| Practice | Implementation |
+| :--- | :--- |
+| **Least-privilege permissions** | Workflow declares `permissions: contents: read` only — no write access granted to jobs that only read, test, and upload artifacts |
+| **No credentials in source** | Hardcoded fallback API keys removed from `playwright.config.ts`; config fails explicitly if `REQRES_API_KEY` is not injected |
+| **Secret injection via GitHub Secrets** | All API keys (`REQRES_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`) injected at the job level from repository secrets — never in source or logs |
+| **`.env.example` pattern** | Documents required keys with placeholder values and acquisition links; `.env` is gitignored |
+
+### 🔀 Quality Gate Upgrade Path
+
+The current pipeline uses non-blocking telemetry for accessibility and performance. The documented upgrade path to production-grade release gates:
+
+| Gate | Current (Portfolio) | Production Upgrade |
+| :--- | :--- | :--- |
+| **Accessibility** | `continue-on-error: true`; all findings are reports | Separate blocking job: fails PR on any new `Critical` or `Serious` violation; `Minor` findings route to issue tracker |
+| **Performance smoke** | Non-blocking concurrency matrix | Add a lightweight smoke job (5 users, <200ms p95 SLA) that runs blocking before merge; stress matrix runs non-blocking post-merge |
+| **API contract** | Status/field-level assertions | Add Pact consumer contract job that fails if provider response schema breaks a registered consumer expectation |
 
 ---
 
@@ -343,13 +453,13 @@ npm run test:perf
 
 ### Environment Variables
 
-Create a `.env` file at the project root:
+Copy `.env.example` to `.env` and fill in your own values:
 
 ```bash
-GROQ_API_KEY=gsk_your_key_here
-REQRES_API_KEY=your_reqres_key_here
-GEMINI_API_KEY=your_gemini_key_here   # optional fallback
+cp .env.example .env
 ```
+
+All keys are injected as GitHub Actions Secrets in CI/CD — see `.env.example` for the full list and where to obtain each key.
 
 ---
 

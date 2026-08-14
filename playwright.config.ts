@@ -46,7 +46,10 @@ export default defineConfig({
       use: {
         baseURL: 'https://reqres.in/api/',
         extraHTTPHeaders: {
-          'x-api-key': process.env.REQRES_API_KEY || 'free_user_3FV2fJGmFELswbMj91CZsT6vXxA',
+          // REQRES_API_KEY must be set via .env or GitHub Secret.
+          // If absent, API tests will fail with 401 — the correct signal.
+          // An empty string is used here to avoid crashing non-API playwright commands locally.
+          'x-api-key': process.env.REQRES_API_KEY ?? '',
         },
       },
     },
