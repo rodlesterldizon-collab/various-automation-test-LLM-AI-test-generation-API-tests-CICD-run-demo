@@ -315,11 +315,11 @@ For detailed module documentation, see [Accessibility README](tests/accessibilit
 
 ### Performance & Load Testing — JMeter via Taurus
 
-Located in `tests/all-perf/` — a JMeter load-testing suite orchestrated by Taurus operating in a **non-blocking telemetry mode**.
+Located in `tests/all-perf/` — a JMeter load-testing suite orchestrated by Taurus operating in a **non-blocking telemetry mode**, executed in CI/CD across a parallel **20 and 50 concurrent virtual user matrix**.
 
 #### Telemetry & Baseline Monitoring Strategy
 
-In this showcase environment, performance tests are configured with `continue-on-error: true` in CI/CD. This runs the load tests as non-blocking telemetry jobs to collect performance metrics (latency distributions, error rates, throughput limits) without breaking public demo workflows when running against shared third-party sandboxes.
+In this showcase environment, performance tests are configured with `continue-on-error: true` in CI/CD. This runs the load tests across a `[20, 50]` concurrent user matrix to collect performance metrics (latency distributions, error rates, throughput limits) without breaking public demo workflows when running against shared third-party sandboxes.
 
 During baseline 20-user stress tests, the suite captured two real environment limits:
 1. The mock API rate-limited traffic at ~10 RPS, triggering a cascade of `429 Too Many Requests` responses
