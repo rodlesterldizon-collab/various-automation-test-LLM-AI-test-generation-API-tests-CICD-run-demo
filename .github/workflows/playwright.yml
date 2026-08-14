@@ -174,7 +174,7 @@ jobs:
         /opt/venv/bin/pip install bzt
 
     - name: Run Taurus Performance Test
-      continue-on-error: true # Gatekeeper pattern
+      continue-on-error: true # Non-blocking telemetry mode — public sandbox rate limits should not break CI
       run: |
         export PATH="/opt/venv/bin:$PATH"
         bzt tests/all-perf/performance-test.yml -o execution.0.concurrency=${{ matrix.users }} -o settings.artifacts-dir=tests/all-perf/results -o modules.console.disable=true

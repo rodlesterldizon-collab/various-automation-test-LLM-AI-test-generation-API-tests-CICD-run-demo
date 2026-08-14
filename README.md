@@ -1,4 +1,4 @@
-# AI-Augmented Playwright Automation Infrastructure
+# AI-Augmented Playwright Automation Portfolio Showcase
 
 [![CI Status](https://img.shields.io/github/actions/workflow/status/rodlesterldizon-collab/automation-test/playwright.yml?style=for-the-badge&logo=github-actions&label=CI%20Status)](https://github.com/rodlesterldizon-collab/automation-test/actions/workflows/playwright.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -10,7 +10,7 @@
 
 > **Built by Rod Lester Dizon**
 >
-> This repository is a **production-grade automation infrastructure showcase** — not a toy project. It demonstrates the full breadth of a senior SDET's engineering scope: multi-layer test architecture (UI, API, LLM, Accessibility, Performance), a self-optimizing CI/CD pipeline, and an AI-augmented engineering workflow using Model Context Protocol (MCP) agents. Public demo targets (SauceDemo, ReqRes, Deque) are used intentionally — they provide a stable, observable surface to demonstrate architectural patterns that transfer directly to enterprise systems.
+> This repository is a **portfolio and feature showcase** designed to highlight various test automation capabilities, architectural patterns, and AI-assisted engineering workflows. Rather than functioning as a live, production-deployed infrastructure, it serves as a comprehensive reference portfolio demonstrating multi-layer test automation across UI, API, LLM evaluation, Accessibility, and Performance testing. Public demo targets (SauceDemo, ReqRes, Deque) are used intentionally to provide a stable, observable environment for showcasing these feature implementations.
 
 ---
 
@@ -76,10 +76,10 @@ This framework is built around four engineering ROI pillars that directly map to
 
 | Pillar | What Was Built | Business Impact |
 | :--- | :--- | :--- |
-| **Eliminate Flakiness** | Defense-in-Depth selector hierarchy + self-healing locators | Zero CI/CD false positives from unstable selectors |
-| **Accelerate Pipelines** | Dockerized Playwright runners on GitHub Actions | ~1-minute end-to-end build time; no browser download overhead |
+| **Minimize Flakiness** | Defense-in-Depth selector hierarchy + self-healing locators | Reduces selector-driven test breakage across UI flows |
+| **Accelerate Pipelines** | Dockerized Playwright runners on GitHub Actions | ~1-minute end-to-end build time with containerized environment parity |
 | **Validate AI Features** | Programmatic LLM evaluation with golden dataset + LLM-as-judge grading | Catches model regressions before they reach production |
-| **Performance Governance** | JMeter via Taurus with a Gatekeeper pattern | Detects SLA violations and rate-limit failures without breaking CI |
+| **Performance Monitoring** | JMeter via Taurus non-blocking telemetry | Captures SLA breaches and concurrency limits as telemetry metrics |
 
 ---
 
@@ -91,7 +91,7 @@ This framework is built around four engineering ROI pillars that directly map to
 | **API Testing** | Playwright API project | REST endpoint validation with strong TypeScript typing |
 | **LLM Evaluation** | Promptfoo + Groq SDK | Programmatic accuracy and groundedness testing for AI models |
 | **Accessibility** | Axe-core + Playwright Lighthouse | WCAG violation detection across mobile & desktop viewports |
-| **Performance** | Apache JMeter + Taurus (bzt) | Load testing with concurrency matrix and Gatekeeper fail-safe |
+| **Performance** | Apache JMeter + Taurus (bzt) | Load testing with concurrency matrix and non-blocking telemetry reporting |
 | **Architecture** | Page Object Model (POM) | Strict separation of UI interactions from test orchestration |
 | **CI/CD** | GitHub Actions + Docker | Containerized, environment-parity pipeline with job dependency management |
 | **Reporting** | Playwright HTML Reports + GitHub Job Summary | Trace Viewer, screenshots, and stakeholder-readable dashboards |
@@ -167,12 +167,15 @@ A custom `compareVisuals` utility programmatically detects UI discrepancies — 
 
 ### API Tests — ReqRes
 
-Located in `tests/api/` — 50 strict API tests demonstrating enterprise-grade backend validation:
+Located in `tests/api/` — 50 API tests demonstrating robust backend validation patterns:
 
 - **Full REST Coverage:** GET, POST, PUT, PATCH, DELETE operations with strong TypeScript interfaces
 - **Security & Auth Injection:** Dynamic `x-api-key` injection via Playwright config and GitHub Secrets
-- **Rate-Limit Resilience:** Graceful HTTP 429 handling that skips assertions instead of failing the pipeline — a deliberate Gatekeeper decision
 - **Edge-Case Coverage:** Malformed payloads, non-existent resources, negative pagination values, extreme string lengths, unauthenticated endpoints
+
+> [!NOTE]
+> **Free-Tier Sandbox Constraints vs. Enterprise Pipelines:**
+> This portfolio relies on shared public sandbox endpoints (ReqRes) and personal free-tier API quotas. In this public demo setting, `HTTP 429` responses are handled gracefully to prevent third-party sandbox rate limits from repeatedly failing public CI runs. In a production enterprise environment with dedicated staging servers, private keys, and SLA contracts, rate limits and skips are classified as infrastructure failures or telemetry exclusions rather than green test states.
 
 ### LLM Evaluation — Promptfoo + Groq
 
@@ -205,11 +208,11 @@ Located in `tests/accessibility/` — a dynamic, multi-engine accessibility scan
 
 **Engineering decisions:**
 - **URL-Driven Orchestration:** Takes a `URL_LIST` environment variable instead of hardcoded URLs, generating parallel test suites on the fly for any target
-- **Non-Blocking CI:** Violations surface as reports, not pipeline failures — preventing accessibility debt from becoming a release blocker while still maintaining visibility
+- **Non-Blocking Telemetry:** Violations surface as reports rather than blocking public CI jobs (`continue-on-error: true`), maintaining visibility into accessibility debt without failing public demo runs
 - **Dual-Engine Coverage:** Axe-core catches strict WCAG violations; Lighthouse provides complete lab audits across Mobile and Desktop viewports
 
 > [!NOTE]
-> This implementation uses the open-source `@axe-core/playwright` package. Enterprise features (focus order tracking, automated manual review prompts, Intelligent Guided Testing) require a commercial Axe DevTools Pro license.
+> **Reporting vs. Release Gates:** In a production deployment pipeline, release policy separates reporting from blocking gates: `Critical` and `Serious` WCAG violations act as blocking PR quality gates, while `Minor` findings report to backlog tracking.
 
 | **Axe-Core Custom Dashboard** | **Lighthouse Mobile/Desktop Audit** |
 | :---: | :---: |
@@ -223,17 +226,20 @@ For detailed module documentation, see [Accessibility README](tests/accessibilit
 
 ### Performance & Load Testing — JMeter via Taurus
 
-Located in `tests/all-perf/` — a JMeter load-testing suite orchestrated by Taurus using a **Gatekeeper pattern**.
+Located in `tests/all-perf/` — a JMeter load-testing suite orchestrated by Taurus operating in a **non-blocking telemetry mode**.
 
-#### The Gatekeeper Pattern
+#### Telemetry & Baseline Monitoring Strategy
 
-The Gatekeeper is an architectural decision: performance tests are configured with `continue-on-error: true` in CI/CD. This means infrastructure failures (rate limits, SLA breaches) are **logged and surfaced as warnings**, not pipeline failures. The automation does not break because the target server buckled — it proves the target server buckled.
+In this showcase environment, performance tests are configured with `continue-on-error: true` in CI/CD. This runs the load tests as non-blocking telemetry jobs to collect performance metrics (latency distributions, error rates, throughput limits) without breaking public demo workflows when running against shared third-party sandboxes.
 
-During baseline 20-user stress tests, the suite caught two real infrastructure limits:
+During baseline 20-user stress tests, the suite captured two real environment limits:
 1. The mock API rate-limited traffic at ~10 RPS, triggering a cascade of `429 Too Many Requests` responses
 2. Latency spiked well above the 500ms SLA threshold
 
-Both were detected, logged, and reported — exactly as designed.
+Both were logged, analyzed, and rendered in the job summary.
+
+> [!NOTE]
+> **Measurement vs. Release Policy:** Production CI/CD architectures separate non-blocking load testing from blocking release gates. Lightweight performance smoke tests (e.g., tight SLA latency gates under 5 users) enforce explicit build-failing thresholds, while high-concurrency stress suites run asynchronously for telemetry and capacity planning.
 
 #### Stats Reference
 
@@ -255,7 +261,7 @@ The pipeline achieves **~1-minute end-to-end execution** with multi-job orchestr
 
 - **Job Dependency Management:** `needs: [api-tests]` ensures API tests pass before UI tests begin — explicit serial execution with no wasted compute
 - **Workflow Dispatch Toggles:** Engineers can selectively trigger `api`, `ui`, `llm`, or `all` suites from the GitHub UI, bypassing redundant runs
-- **Docker Binary Bypass:** Microsoft's `playwright:jammy` image is used as the runner container, eliminating browser download time entirely
+- **Containerized Execution:** Microsoft's `playwright:jammy` image provides pre-packaged OS dependencies and system runtime parity across CI jobs
 - **Environment Parity:** Containerized execution ensures identical contexts across local dev, staging, and CI — no "works on my machine" failures
 - **Concurrency Matrix:** Performance tests run against a `[20, 50]` user matrix in parallel, producing separate artifact sets per tier
 
