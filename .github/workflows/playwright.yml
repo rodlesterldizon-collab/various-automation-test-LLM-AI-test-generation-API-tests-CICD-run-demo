@@ -146,7 +146,7 @@ jobs:
       if: always()
       run: |
         HAS_VIOLATIONS=false
-        if grep -q '"violations": *\[[^{]]*{' tests/accessibility/reports/*.json 2>/dev/null; then
+        if grep -q '"impact":' tests/accessibility/reports/*.json 2>/dev/null; then
           HAS_VIOLATIONS=true
         fi
 
